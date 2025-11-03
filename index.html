@@ -1,0 +1,149 @@
+!DOCTYPE html>
+<html>
+  <head>
+    <title>Hello, World!</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+      <h1 class="title">Hello World! </h1>
+      <p id="currentTime"></p>
+      <script src="script.js"></script>
+  </body>
+</html><!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Los pasillos de las matematicas</title>
+<style>
+body{margin:0;overflow:hidden;font-family:Arial,sans-serif;background:#0c0c2e;color:white;}
+header{position:fixed;top:0;left:0;right:0;background:rgba(0,0,0,0.7);padding:10px;display:flex;justify-content:space-between;align-items:center;z-index:3;}
+header h1{margin:0;}
+header .info{display:flex;align-items:center;}
+header .info span{margin-left:15px;}
+#gameContainer{position:absolute;top:0;left:0;width:100%;height:100vh;z-index:1;}
+canvas{display:block;position:absolute;top:0;left:0;}
+.buttonAnswer{position:absolute;cursor:pointer;text-align:center;font-weight:bold;font-size:24px;color:#000;background:rgba(255,255,255,0.7);border-radius:12px;padding:10px;width:180px;}
+</style>
+</head>
+<body>
+<header>
+<h1>Juego Matemático 3D</h1>
+<div class="info">
+<span id="hearts">❤️❤️❤️</span>
+<span id="levelName">Nivel: Multiplicaciones</span>
+<span id="timer">15s</span>
+</div>
+</header>
+
+<div id="gameContainer">
+<canvas id="gameCanvas"></canvas>
+</div>
+
+<script>
+// ---------------- Configuraciones
+const MAX_LIVES=3; let lives=MAX_LIVES; let currentLevel=0; let questionIndex=0;
+let timeLeft=15; let timerInterval=null;
+const canvas=document.getElementById('gameCanvas'); const ctx=canvas.getContext('2d');
+let cw,ch; function resize(){cw=canvas.width=window.innerWidth; ch=canvas.height=window.innerHeight;} window.addEventListener('resize',resize); resize();
+
+// ---------------- Datos de juego
+let data=[
+{title:"Multiplicaciones",color:"#a3e0ff",items:[
+{q:"18 × 3",choices:["38","54"],correct:1},
+{q:"54 × 4",choices:["216","215"],correct:0},
+{q:"29 × 6",choices:["174","206"],correct:0},
+{q:"15 × 7",choices:["105","95"],correct:0}]},
+
+{title:"Sumas y Restas",color:"#fff4b3",items:[
+{q:"11.158 + 17.969",choices:["40.122","29.127"],correct:1},
+{q:"40.000 + 47.450",choices:["87.000","87.450"],correct:1},
+{q:"50.430 + 10.115",choices:["60.545","60.369"],correct:0},
+{q:"80.470 + 20.100",choices:["100.570","100.560"],correct:0}]},
+
+{title:"Divisiones",color:"#ffb3b3",items:[
+{q:"72 ÷ 8",choices:["9","8"],correct:0},
+{q:"144 ÷ 12",choices:["11","12"],correct:1},
+{q:"225 ÷ 15",choices:["20","15"],correct:0},
+{q:"96 ÷ 6",choices:["18","16"],correct:1}]},
+
+{title:"Expresiones Algebraicas",color:"#ff7b7b",items:[
+{q:"El doble de un número x",choices:["2x","x+2"],correct:0},
+{q:"El triple de un número más 4",choices:["3x+4","x+3+4"],correct:0},
+{q:"El número anterior a x",choices:["x-1","x+1"],correct:0},
+{q:"El mayor entre x y 8",choices:["max(x,8)","x+8"],correct:0}]}];
+
+// ---------------- UI
+const heartsEl=document.getElementById('hearts'); const levelNameEl=document.getElementById('levelName'); const timerEl=document.getElementById('timer');
+function updateUI(){heartsEl.textContent="❤️".repeat(lives)+"💔".repeat(MAX_LIVES-lives); levelNameEl.textContent="Nivel: "+data[currentLevel].title; timeLeft=15; timerEl.textContent=timeLeft+"s"; clearInterval(timerInterval); timerInterval=setInterval(()=>{timeLeft--; timerEl.textContent=timeLeft+"s"; if(timeLeft<=0){lives--; updateUI();}},1000);}
+
+// ---------------- Partículas futuristas
+let particles=[]; function initParticles(){particles=[]; for(let i=0;i<150;i++){particles.push({x:Math.random()*cw,y:Math.random()*ch,z:Math.random()*2+1});}}
+
+// ---------------- Emojis extremo
+let emojis=[]; 
+function initEmojis(){
+emojis=[];
+if(data[currentLevel].title==="Expresiones Algebraicas"){
+for(let i=0;i<20;i++){
+emojis.push({x:Math.random()*cw,y:Math.random()*ch,char:"😈",speed:Math.random()*2+1});
+}}}
+
+// ---------------- Crear botones de respuestas
+let buttons=[];
+function createButtons(){
+buttons.forEach(b=>b.remove()); buttons=[];
+const q=data[currentLevel].items[questionIndex];
+const yStart=ch*0.5;
+q.choices.forEach((text,i)=>{
+const btn=document.createElement("div");
+btn.className="buttonAnswer";
+btn.style.background=data[currentLevel].color;
+btn.style.left=`${cw/2 - (i===0?220:-40)}px`;
+btn.style.top=`${yStart}px`;
+btn.textContent=text;
+btn.onclick=()=>{if(i===q.correct){nextQuestion(true);}else{lives--; updateUI();}};
+document.getElementById("gameContainer").appendChild(btn); buttons.push(btn);
+});}
+
+// ---------------- Siguiente pregunta
+function nextQuestion(correct){
+questionIndex++; 
+if(questionIndex>=data[currentLevel].items.length){
+alert("¡Nivel completado!"); 
+currentLevel++; 
+if(currentLevel>=data.length){
+alert("🎉 ¡Juego completado! ¡Sos un genio matemático!");
+currentLevel=0;
+}
+questionIndex=0; 
+lives=MAX_LIVES;
+}
+createButtons(); initEmojis(); updateUI();
+}
+
+// ---------------- Dibujar calle 3D
+let streetLines=[];
+function initStreetLines(){streetLines=[]; for(let i=0;i<20;i++){streetLines.push({y:i*100});}}
+function drawStreet(){
+ctx.clearRect(0,0,cw,ch);
+// Calle perspectiva
+ctx.fillStyle="#111"; ctx.fillRect(cw*0.25,0,cw*0.5,ch);
+ctx.strokeStyle="#fff"; ctx.lineWidth=2;
+streetLines.forEach(l=>{
+ctx.beginPath(); ctx.moveTo(cw*0.25,l.y); ctx.lineTo(cw*0.75,l.y); ctx.stroke(); l.y+=4; if(l.y>ch) l.y=0;
+});
+// Partículas sobre calle
+particles.forEach(p=>{ctx.fillStyle="rgba(0,255,255,0.5)"; ctx.beginPath(); ctx.arc(p.x,p.y,p.z,0,Math.PI*2); ctx.fill();});
+// Emojis
+emojis.forEach(e=>{ctx.font="24px Arial"; ctx.fillText(e.char,e.x,e.y); e.y+=e.speed; if(e.y>ch) e.y=0;});
+// Pregunta flotando
+ctx.fillStyle="#ff0"; ctx.font="28px Arial"; ctx.textAlign="center"; ctx.fillText(data[currentLevel].items[questionIndex].q,cw/2,ch*0.3);
+requestAnimationFrame(drawStreet);
+}
+
+// ---------------- Inicializar
+initParticles(); initEmojis(); initStreetLines(); createButtons(); updateUI(); drawStreet();
+</script>
+</body>
+</html>
